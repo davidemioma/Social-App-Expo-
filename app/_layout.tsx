@@ -1,8 +1,10 @@
 import React, { useEffect } from "react";
-import { Stack } from "expo-router";
 import { useFonts } from "expo-font";
-import { StatusBar } from "expo-status-bar";
+import { SafeAreaView } from "react-native";
+import CheckAuth from "@/components/CheckAuth";
 import * as SplashScreen from "expo-splash-screen";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+import { ConvexClientProvider } from "@/providers/convex-client-provider";
 
 import "react-native-reanimated";
 
@@ -25,14 +27,17 @@ export default function RootLayout() {
   }
 
   return (
-    <>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-
-        <Stack.Screen name="+not-found" />
-      </Stack>
-
-      <StatusBar style="auto" />
-    </>
+    <ConvexClientProvider>
+      <SafeAreaProvider>
+        <SafeAreaView
+          style={{
+            flex: 1,
+            backgroundColor: "black",
+          }}
+        >
+          <CheckAuth />
+        </SafeAreaView>
+      </SafeAreaProvider>
+    </ConvexClientProvider>
   );
 }
