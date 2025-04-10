@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useCallback } from "react";
 import { useFonts } from "expo-font";
 import { SafeAreaView } from "react-native";
 import CheckAuth from "@/components/CheckAuth";
@@ -13,18 +13,14 @@ SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const [loaded] = useFonts({
-    SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
+    "JetBrainsMono-Medium": require("../assets/fonts/JetBrainsMono-Medium.ttf"),
   });
 
-  useEffect(() => {
+  const onLayoutRootView = useCallback(async () => {
     if (loaded) {
-      SplashScreen.hideAsync();
+      await SplashScreen.hideAsync();
     }
   }, [loaded]);
-
-  if (!loaded) {
-    return null;
-  }
 
   return (
     <ConvexClientProvider>
@@ -34,6 +30,7 @@ export default function RootLayout() {
             flex: 1,
             backgroundColor: "black",
           }}
+          onLayout={onLayoutRootView}
         >
           <CheckAuth />
         </SafeAreaView>
