@@ -3,19 +3,14 @@ import { getAuthUser } from "./users";
 import { mutation, query } from "./_generated/server";
 
 export const getBookmarkedPosts = query({
-  args: {
-    postId: v.id("posts"),
-  },
-  handler: async (ctx, args) => {
+  handler: async (ctx) => {
     // Auth
     const currentUser = await getAuthUser(ctx);
 
     // Get posts
     const bookmarks = await ctx.db
       .query("bookmarks")
-      .withIndex("by_user_and_post", (q) =>
-        q.eq("userId", currentUser._id).eq("postId", args.postId)
-      )
+      .withIndex("by_user_id", (q) => q.eq("userId", currentUser._id))
       .order("desc")
       .collect();
 

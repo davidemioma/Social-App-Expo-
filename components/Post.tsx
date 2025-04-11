@@ -2,13 +2,14 @@ import React, { useState } from "react";
 import { Link } from "expo-router";
 import { Image } from "expo-image";
 import { COLORS } from "@/constants/theme";
-import { useMutation } from "convex/react";
+import { useUser } from "@clerk/clerk-expo";
 import CommentsModal from "./CommentsModal";
 import { api } from "@/convex/_generated/api";
 import { Ionicons } from "@expo/vector-icons";
 import { styles } from "@/styles/home.styles";
 import { formatDistanceToNow } from "date-fns";
 import { Id } from "@/convex/_generated/dataModel";
+import { useMutation, useQuery } from "convex/react";
 import { View, Text, TouchableOpacity } from "react-native";
 
 type Props = {
@@ -33,15 +34,28 @@ type Props = {
 };
 
 export default function Post({ post }: Props) {
-  const toggleLike = useMutation(api.posts.toggleLike);
+  const { user } = useUser();
 
-  const [hasLiked, setHasLiked] = useState(post.hasLiked);
-
-  const [likeCount, setLikeCount] = useState(post.likes);
+  const dbCurrentUser = useQuery(
+    api.users.getUserByClerkId,
+    user ? { clerkId: user?.id } : "skip"
+  );
 
   const [showComment, setShowComment] = useState(false);
 
+  const [likeCount, setLikeCount] = useState(post.likes);
+
+  const [hasLiked, setHasLiked] = useState(post.hasLiked);
+
   const [commentCount, setCommentCount] = useState(post.comments);
+
+  const [hasBookmarked, setHasBookmarked] = useState(post.hasBookmarked);
+
+  const toggleLike = useMutation(api.posts.toggleLike);
+
+  const toggleBookmark = useMutation(api.bookmarks.toggleBookmark);
+
+  const deletePost = useMutation(api.posts.deletePost);
 
   const handleLike = async () => {
     try {
@@ -54,6 +68,28 @@ export default function Post({ post }: Props) {
       console.log("handleLike err", err);
 
       alert("Unable to toggle like");
+    }
+  };
+
+  const handleBookmark = async () => {
+    try {
+      const res = await toggleBookmark({ postId: post._id });
+
+      setHasBookmarked(res);
+    } catch (err) {
+      console.log("handleBookmark err", err);
+
+      alert("Unable to toggle bookmark");
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      await deletePost({ postId: post._id });
+    } catch (err) {
+      console.log("handleDelete err", err);
+
+      alert("Unable to delete post");
     }
   };
 
@@ -76,13 +112,19 @@ export default function Post({ post }: Props) {
           </TouchableOpacity>
         </Link>
 
-        <TouchableOpacity>
-          <Ionicons name="ellipsis-horizontal" size={20} color={COLORS.white} />
-        </TouchableOpacity>
-
-        <TouchableOpacity onPress={() => {}}>
-          <Ionicons name="trash-outline" size={20} color={COLORS.primary} />
-        </TouchableOpacity>
+        {post.userId === dbCurrentUser?._id ? (
+          <TouchableOpacity onPress={handleDelete}>
+            <Ionicons name="trash-outline" size={20} color={COLORS.primary} />
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity>
+            <Ionicons
+              name="ellipsis-horizontal"
+              size={20}
+              color={COLORS.white}
+            />
+          </TouchableOpacity>
+        )}
       </View>
 
       <Image
@@ -112,8 +154,12 @@ export default function Post({ post }: Props) {
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity onPress={() => {}}>
-          <Ionicons name="bookmark-outline" size={22} color={COLORS.white} />
+        <TouchableOpacity onPress={handleBookmark}>
+          <Ionicons
+            name={hasBookmarked ? "bookmark" : "bookmark-outline"}
+            size={22}
+            color={hasBookmarked ? COLORS.primary : COLORS.white}
+          />
         </TouchableOpacity>
       </View>
 
@@ -143,7 +189,6 @@ export default function Post({ post }: Props) {
         )}
 
         <Text style={styles.timeAgo}>
-          {" "}
           {formatDistanceToNow(post._creationTime, { addSuffix: true })}
         </Text>
       </View>

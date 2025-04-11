@@ -72,6 +72,10 @@ export default function CreateScreen() {
         storageId,
       });
 
+      setCaption("");
+
+      setSelectedImage(null);
+
       router.push("/(tabs)");
     } catch (err) {
       console.log("onCreatePost err", err);

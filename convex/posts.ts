@@ -14,7 +14,7 @@ export const getPosts = query({
 
     const postsWithInfo = await Promise.all(
       posts.map(async (post) => {
-        const author = await ctx.db.get(currentUser._id);
+        const author = await ctx.db.get(post.userId);
 
         const like = await ctx.db
           .query("likes")
@@ -150,5 +150,100 @@ export const toggleLike = mutation({
     }
 
     return true;
+  },
+});
+
+export const deletePost = mutation({
+  args: {
+    postId: v.id("posts"),
+  },
+  handler: async (ctx, args) => {
+    // Auth
+    const currentUser = await getAuthUser(ctx);
+
+    // Check if post exists
+    const post = await ctx.db.get(args.postId);
+
+    if (!post) {
+      throw new Error("Post not found");
+    }
+
+    // check if user created the post
+    if (post.userId !== currentUser._id) {
+      throw new Error("Unauthorized! you can only delete your post.");
+    }
+
+    // Delete all likes
+    const likes = await ctx.db
+      .query("likes")
+      .withIndex("by_post_id", (q) => q.eq("postId", post._id))
+      .collect();
+
+    for (const like of likes) {
+      await ctx.db.delete(like._id);
+    }
+
+    // Delete notifications
+    const notifications = await ctx.db
+      .query("notifications")
+      .withIndex("by_post_id", (q) => q.eq("postId", post._id))
+      .collect();
+
+    for (const notification of notifications) {
+      await ctx.db.delete(notification._id);
+    }
+
+    // Delete all comments
+    const comments = await ctx.db
+      .query("comments")
+      .withIndex("by_post_id", (q) => q.eq("postId", post._id))
+      .collect();
+
+    for (const comment of comments) {
+      await ctx.db.delete(comment._id);
+    }
+
+    // Delete all bookmarks
+    const bookmarks = await ctx.db
+      .query("bookmarks")
+      .withIndex("by_post_id", (q) => q.eq("postId", post._id))
+      .collect();
+
+    for (const bookmark of bookmarks) {
+      await ctx.db.delete(bookmark._id);
+    }
+
+    // Delete image file from storage
+    await ctx.storage.delete(post.storageId);
+
+    // Delete posts
+    await ctx.db.delete(post._id);
+
+    // Update user details
+    await ctx.db.patch(currentUser._id, {
+      posts: Math.max(0, (currentUser.posts || 1) - 1), // to avoid negative numbers.
+    });
+  },
+});
+
+export const getPostsByUserId = query({
+  args: {
+    userId: v.optional(v.id("users")),
+  },
+  handler: async (ctx, args) => {
+    const user = args.userId
+      ? await ctx.db.get(args.userId)
+      : await getAuthUser(ctx);
+
+    if (!user) {
+      throw new Error("User not found!");
+    }
+
+    const posts = await ctx.db
+      .query("posts")
+      .withIndex("by_user_id", (q) => q.eq("userId", user._id))
+      .collect();
+
+    return posts;
   },
 });
