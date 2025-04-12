@@ -138,3 +138,31 @@ export const updateProfile = mutation({
     });
   },
 });
+
+export const getUserProfile = query({
+  args: {
+    userId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    // Auth
+    const currentUser = await getAuthUser(ctx);
+
+    const user = await ctx.db.get(args.userId);
+
+    if (!user) {
+      throw new Error("User not found!");
+    }
+
+    const follow = await ctx.db
+      .query("follows")
+      .withIndex("by_both", (q) =>
+        q.eq("followerId", currentUser._id).eq("followingId", user._id)
+      )
+      .first();
+
+    return {
+      ...user,
+      isFollowing: !!follow,
+    };
+  },
+});

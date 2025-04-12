@@ -1,11 +1,11 @@
 import React from "react";
-import { useQuery } from "convex/react";
-import { View, Text, FlatList, ScrollView } from "react-native";
-import { api } from "@/convex/_generated/api";
-import LoadingScreen from "@/components/LoadingScreen";
-import { styles } from "@/styles/home.styles";
-import { COLORS } from "@/constants/theme";
 import { Image } from "expo-image";
+import { useQuery } from "convex/react";
+import { COLORS } from "@/constants/theme";
+import { styles } from "@/styles/home.styles";
+import { api } from "@/convex/_generated/api";
+import { View, Text, ScrollView } from "react-native";
+import LoadingScreen from "@/components/LoadingScreen";
 
 export default function BookmarksScreen() {
   const posts = useQuery(api.bookmarks.getBookmarkedPosts);
@@ -29,9 +29,8 @@ export default function BookmarksScreen() {
           }}
         >
           {posts.map((post) => (
-            <View style={{ width: "33.33%", padding: 1 }}>
+            <View key={post?._id} style={{ width: "33.33%", padding: 1 }}>
               <Image
-                key={post?._id}
                 source={post?.imageUrl}
                 style={{ width: "100%", aspectRatio: 1 }}
                 contentFit="cover"

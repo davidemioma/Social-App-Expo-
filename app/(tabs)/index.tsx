@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import Post from "@/components/Post";
 import Story from "@/components/Story";
 import { useQuery } from "convex/react";
@@ -9,12 +9,32 @@ import { Ionicons } from "@expo/vector-icons";
 import { api } from "@/convex/_generated/api";
 import { STORIES } from "@/constants/mock-data";
 import LoadingScreen from "@/components/LoadingScreen";
-import { View, Text, TouchableOpacity, FlatList } from "react-native";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  FlatList,
+  RefreshControl,
+  ScrollView,
+} from "react-native";
 
 export default function HomeScreen() {
   const { signOut } = useAuth();
 
   const posts = useQuery(api.posts.getPosts);
+
+  const [refreshing, setRefreshing] = useState(false);
+
+  // Handle refreshing
+  const onRefresh = () => {
+    setRefreshing(true);
+
+    // Try refectching posts. since it convex no need.
+
+    setTimeout(() => {
+      setRefreshing(false);
+    }, 2000);
+  };
 
   if (posts === undefined) {
     return <LoadingScreen />;
@@ -30,24 +50,33 @@ export default function HomeScreen() {
         </TouchableOpacity>
       </View>
 
-      <FlatList
-        style={styles.storiesContainer}
-        data={STORIES}
-        renderItem={({ item }) => <Story story={item} />}
-        keyExtractor={({ id }) => id}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-      />
-
       {posts.length > 0 ? (
         <FlatList
           data={posts}
+          ListHeaderComponent={
+            <ScrollView
+              style={styles.storiesContainer}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+            >
+              {STORIES.map((story) => (
+                <Story key={story.id} story={story} />
+              ))}
+            </ScrollView>
+          }
           renderItem={({ item }) => <Post post={item} />}
           keyExtractor={({ _id }) => _id}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{
             paddingBottom: 60,
           }}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={COLORS.primary}
+            />
+          }
         />
       ) : (
         <View

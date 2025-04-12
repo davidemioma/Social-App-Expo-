@@ -23,15 +23,9 @@ type Props = {
   postId: Id<"posts">;
   visible: boolean;
   onClose: () => void;
-  onCommentAdded: () => void;
 };
 
-export default function CommentsModal({
-  postId,
-  visible,
-  onClose,
-  onCommentAdded,
-}: Props) {
+export default function CommentsModal({ postId, visible, onClose }: Props) {
   const [content, setContent] = useState("");
 
   const [isPending, setIsPending] = useState(false);
@@ -58,8 +52,6 @@ export default function CommentsModal({
       });
 
       setContent("");
-
-      onCommentAdded();
     } catch (err) {
       console.log("addCommentHandler err", err);
 

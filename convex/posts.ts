@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { getAuthUser } from "./users";
-import { mutation, query } from "./_generated/server";
+import { mutation, MutationCtx, query } from "./_generated/server";
+import { Id } from "./_generated/dataModel";
 
 export const getPosts = query({
   handler: async (ctx) => {
@@ -245,5 +246,72 @@ export const getPostsByUserId = query({
       .collect();
 
     return posts;
+  },
+});
+
+const updateFollowcount = async (
+  ctx: MutationCtx,
+  followerId: Id<"users">,
+  followingId: Id<"users">,
+  isFollow: boolean
+) => {
+  const follower = await ctx.db.get(followerId);
+
+  const following = await ctx.db.get(followingId);
+
+  if (follower && following) {
+    await ctx.db.patch(follower._id, {
+      following: follower.following + (isFollow ? 1 : -1),
+    });
+
+    await ctx.db.patch(following._id, {
+      followers: following.followers + (isFollow ? 1 : -1),
+    });
+  }
+};
+
+export const toggleFollow = mutation({
+  args: {
+    userId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    // Auth
+    const currentUser = await getAuthUser(ctx);
+
+    // Check if you follow user
+    const follow = await ctx.db
+      .query("follows")
+      .withIndex("by_both", (q) =>
+        q.eq("followerId", currentUser._id).eq("followingId", args.userId)
+      )
+      .first();
+
+    if (follow) {
+      // Unfollow
+      await ctx.db.delete(follow._id);
+
+      // Update both users
+      await updateFollowcount(ctx, currentUser._id, args.userId, false);
+
+      return false;
+    }
+
+    // Follow
+    await ctx.db.insert("follows", {
+      followerId: currentUser._id,
+      followingId: args.userId,
+    });
+
+    // Update both users
+    await updateFollowcount(ctx, currentUser._id, args.userId, true);
+
+    // Send notification
+    await ctx.db.insert("notifications", {
+      senderId: currentUser._id,
+      recieverId: args.userId,
+      type: "follow",
+    });
+
+    return true;
   },
 });

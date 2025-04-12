@@ -1,8 +1,10 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useEffect } from "react";
 import { useFonts } from "expo-font";
-import { SafeAreaView } from "react-native";
+import { StatusBar } from "expo-status-bar";
 import CheckAuth from "@/components/CheckAuth";
 import * as SplashScreen from "expo-splash-screen";
+import * as NavigationBar from "expo-navigation-bar";
+import { Platform, SafeAreaView } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { ConvexClientProvider } from "@/providers/convex-client-provider";
 
@@ -22,6 +24,15 @@ export default function RootLayout() {
     }
   }, [loaded]);
 
+  // install (bunx expo install expo-navigation-bar)
+  useEffect(() => {
+    if (Platform.OS === "android") {
+      NavigationBar.setBackgroundColorAsync("#000000");
+
+      NavigationBar.setButtonStyleAsync("light");
+    }
+  }, []);
+
   return (
     <ConvexClientProvider>
       <SafeAreaProvider>
@@ -35,6 +46,8 @@ export default function RootLayout() {
           <CheckAuth />
         </SafeAreaView>
       </SafeAreaProvider>
+
+      <StatusBar style="light" />
     </ConvexClientProvider>
   );
 }

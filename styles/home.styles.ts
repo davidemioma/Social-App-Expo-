@@ -24,7 +24,6 @@ export const styles = StyleSheet.create({
     color: COLORS.primary,
   },
   storiesContainer: {
-    height: 150,
     paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.surface,

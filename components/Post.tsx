@@ -43,11 +43,7 @@ export default function Post({ post }: Props) {
 
   const [showComment, setShowComment] = useState(false);
 
-  const [likeCount, setLikeCount] = useState(post.likes);
-
   const [hasLiked, setHasLiked] = useState(post.hasLiked);
-
-  const [commentCount, setCommentCount] = useState(post.comments);
 
   const [hasBookmarked, setHasBookmarked] = useState(post.hasBookmarked);
 
@@ -62,8 +58,6 @@ export default function Post({ post }: Props) {
       const res = await toggleLike({ postId: post._id });
 
       setHasLiked(res);
-
-      setLikeCount((prev) => (res === true ? prev + 1 : prev - 1));
     } catch (err) {
       console.log("handleLike err", err);
 
@@ -96,7 +90,14 @@ export default function Post({ post }: Props) {
   return (
     <View style={styles.post}>
       <View style={styles.postHeader}>
-        <Link href={"/(tabs)/notifications"}>
+        <Link
+          href={
+            dbCurrentUser?._id === post.author._id
+              ? "/(tabs)/profile"
+              : `/users/${post.userId}`
+          }
+          asChild
+        >
           <TouchableOpacity style={styles.postHeaderLeft}>
             <Image
               style={styles.postAvatar}
@@ -165,8 +166,8 @@ export default function Post({ post }: Props) {
 
       <View style={styles.postInfo}>
         <Text style={styles.likesText}>
-          {likeCount > 0
-            ? `${likeCount.toLocaleString()} like${likeCount > 1 ? "s" : ""}`
+          {post.likes > 0
+            ? `${post.likes.toLocaleString()} like${post.likes > 1 ? "s" : ""}`
             : "Be the first to like"}
         </Text>
 
@@ -180,10 +181,10 @@ export default function Post({ post }: Props) {
           </View>
         )}
 
-        {commentCount > 0 && (
+        {post.comments > 0 && (
           <TouchableOpacity onPress={() => setShowComment(true)}>
             <Text style={styles.commentsText}>
-              View all {commentCount} comment{commentCount > 1 ? "s" : ""}
+              View all {post.comments} comment{post.comments > 1 ? "s" : ""}
             </Text>
           </TouchableOpacity>
         )}
@@ -197,7 +198,6 @@ export default function Post({ post }: Props) {
         postId={post._id}
         visible={showComment}
         onClose={() => setShowComment(false)}
-        onCommentAdded={() => setCommentCount((prev) => prev + 1)}
       />
     </View>
   );
